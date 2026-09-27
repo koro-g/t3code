@@ -98,9 +98,9 @@ export function resolvePlanFollowUpSubmission(input: { draftText: string; planMa
 export function buildPlanImplementationThreadTitle(planMarkdown: string): string {
   const title = proposedPlanTitle(planMarkdown);
   if (!title) {
-    return "Implement plan";
+    return "Implémenter le plan";
   }
-  return `Implement ${title}`;
+  return `Implémenter ${title}`;
 }
 
 export function buildProposedPlanMarkdownFilename(planMarkdown: string): string {

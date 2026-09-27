@@ -2697,7 +2697,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     projectSelectionRequired ||
     environmentUnavailable !== null ||
     !composerSendState.hasSendableContent;
-  const collapsedComposerPrimaryActionLabel = "Send message";
+  const collapsedComposerPrimaryActionLabel = "Envoyer le message";
   const showMobilePendingAnswerActions =
     isMobileViewport && !isComposerCollapsedMobile && pendingPrimaryAction !== null;
 
@@ -6391,13 +6391,13 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 >
                   {activePendingProgress
                     ? isChoiceOnlyPendingQuestion
-                      ? "Choose an option above"
+                      ? "Choisis une option ci-dessus"
                       : activePendingProgress.customAnswer ||
-                        "Type your own answer, or leave this blank to use the selected option"
+                        "Écris ta propre réponse, ou laisse vide pour utiliser l'option sélectionnée"
                     : prompt.trim() ||
                       (showProviderUnavailable
-                        ? "Enable a provider in Settings"
-                        : "Ask anything...")}
+                        ? "Active un provider dans Réglages"
+                        : "Demande ce que tu veux…")}
                 </button>
                 {collapsedComposerImagePreviews}
                 <button
@@ -6880,20 +6880,20 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     onPaste={onComposerPaste}
                     placeholder={
                       isComposerApprovalState
-                        ? "Resolve this approval request to continue"
+                        ? "Résous cette demande d'approbation pour continuer"
                         : activePendingProgress
                           ? isChoiceOnlyPendingQuestion
-                            ? "Choose an option above"
-                            : "Type your own answer, or leave this blank to use the selected option"
+                            ? "Choisis une option ci-dessus"
+                            : "Écris ta propre réponse, ou laisse vide pour utiliser l'option sélectionnée"
                           : showPlanFollowUpPrompt && activeProposedPlan
-                            ? "Add feedback to refine the plan, or leave this blank to implement it"
+                            ? "Ajoute un retour pour affiner le plan, ou laisse vide pour l'implémenter"
                             : projectSelectionRequired
-                              ? "Choose a project above to start a thread"
+                              ? "Choisis un projet ci-dessus pour démarrer un thread"
                               : showProviderUnavailable
-                                ? "Enable a provider in Settings to send a message"
+                                ? "Active un provider dans Réglages pour envoyer un message"
                                 : phase === "disconnected"
                                   ? DISCONNECTED_COMPOSER_PLACEHOLDER
-                                  : "Ask anything, @tag files/folders, $use skills, or / for commands"
+                                  : "Écris ton message : @ fichiers/dossiers, $ skills, / commandes"
                     }
                     disabled={
                       isConnecting ||
@@ -7002,13 +7002,13 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                               size="icon-sm"
                               onPointerDown={(event) => event.preventDefault()}
                               onClick={() => attachmentInputRef.current?.click()}
-                              aria-label="Attach files"
+                              aria-label="Joindre des fichiers"
                             />
                           }
                         >
                           <PaperclipIcon />
                         </TooltipTrigger>
-                        <TooltipPopup>Attach files</TooltipPopup>
+                        <TooltipPopup>Joindre des fichiers</TooltipPopup>
                       </Tooltip>
                     </>
                   ) : null}

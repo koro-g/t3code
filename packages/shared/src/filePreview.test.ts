@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
+  docxMimeTypeFromExtension,
   filePreviewKind,
   decodeFilePreviewText,
   FILE_TEXT_PREVIEW_MAX_BYTES,
   hostPreviewMimeTypeFromExtension,
+  isDocxPreviewFile,
   isWorkspaceAudioPreviewPath,
   isWorkspaceBrowserPreviewPath,
+  isWorkspaceDocxPreviewPath,
   isWorkspaceImagePreviewPath,
   isWorkspacePreviewEntryPath,
   isWorkspaceVideoPreviewPath,
@@ -47,6 +50,20 @@ describe("workspace file previews", () => {
     expect(hostPreviewMimeTypeFromExtension(".m4a")).toBe("audio/mp4");
     expect(hostPreviewMimeTypeFromExtension(".mp4")).toBe("video/mp4");
     expect(hostPreviewMimeTypeFromExtension(".txt")).toBeNull();
+  });
+
+  it("recognizes Word documents as preview entries", () => {
+    expect(isWorkspaceDocxPreviewPath("Mémoire.docx")).toBe(true);
+    expect(isWorkspaceDocxPreviewPath("memoire.DOCX?download=1")).toBe(true);
+    expect(isWorkspaceDocxPreviewPath("memoire.docx.ts")).toBe(false);
+    expect(isWorkspacePreviewEntryPath("notes/rapport.docx")).toBe(true);
+    expect(docxMimeTypeFromExtension(".docx")).toBe(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+    expect(docxMimeTypeFromExtension(".doc")).toBeNull();
+    expect(hostPreviewMimeTypeFromExtension(".docx")).toBe(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
   });
 });
 
@@ -89,6 +106,16 @@ describe("attachment preview classification", () => {
     ["misleading.pdf", "application/zip", "unsupported"],
   ])("classifies %s (%s) as %s", (name, mimeType, expected) => {
     expect(filePreviewKind({ name, mimeType })).toBe(expected);
+  });
+  it("classifies Word attachments for the in-app document viewer", () => {
+    expect(isDocxPreviewFile({ name: "rapport.docx", mimeType: "" })).toBe(true);
+    expect(
+      isDocxPreviewFile({
+        name: "rapport",
+        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      }),
+    ).toBe(true);
+    expect(isDocxPreviewFile({ name: "rapport.doc", mimeType: "" })).toBe(false);
   });
   it("rejects binary and invalid UTF-8 data", () => {
     expect(() => decodeFilePreviewText(new Uint8Array([65, 0, 66]))).toThrow("binary");

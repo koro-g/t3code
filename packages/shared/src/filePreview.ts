@@ -73,6 +73,11 @@ export function decodeFilePreviewText(bytes: Uint8Array, truncated = false) {
 
 export const WORKSPACE_BROWSER_PREVIEW_EXTENSIONS = [".htm", ".html", ".pdf"] as const;
 
+/** Word documents the web and desktop clients render in place. */
+export const WORKSPACE_DOCX_PREVIEW_EXTENSIONS = [".docx"] as const;
+
+const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
 export const WORKSPACE_IMAGE_PREVIEW_EXTENSIONS = [
   ".avif",
   ".gif",
@@ -119,6 +124,12 @@ export function audioMimeTypeFromExtension(extension: string): string | null {
   return AUDIO_MIME_TYPE_BY_EXTENSION.get(extension.toLowerCase()) ?? null;
 }
 
+/** Word documents a document viewer may request by extension. */
+export function docxMimeTypeFromExtension(extension: string): string | null {
+  if (!/^\.[a-z0-9]+$/i.test(extension)) return null;
+  return extension.toLowerCase() === ".docx" ? DOCX_MIME_TYPE : null;
+}
+
 /** Classifies a literal filesystem extension, without URL decoding or suffix removal. */
 export function mediaMimeTypeFromExtension(extension: string): string | null {
   if (!/^\.[a-z0-9]+$/i.test(extension)) return null;
@@ -128,13 +139,14 @@ export function mediaMimeTypeFromExtension(extension: string): string | null {
   );
 }
 
-/** Files the server serves in place from anywhere on its host: media, audio and browser documents. */
+/** Files the server serves in place from anywhere on its host: media, audio, browser and Word documents. */
 export function hostPreviewMimeTypeFromExtension(extension: string): string | null {
   if (!/^\.[a-z0-9]+$/i.test(extension)) return null;
   return (
     mediaMimeTypeFromExtension(extension) ??
     audioMimeTypeFromExtension(extension) ??
     BROWSER_MIME_TYPE_BY_EXTENSION.get(extension.toLowerCase()) ??
+    docxMimeTypeFromExtension(extension) ??
     null
   );
 }
@@ -183,6 +195,21 @@ export function isWorkspaceImagePreviewPath(path: string): boolean {
   return hasPreviewExtension(path, WORKSPACE_IMAGE_PREVIEW_EXTENSIONS);
 }
 
+export function isWorkspaceDocxPreviewPath(path: string): boolean {
+  return hasPreviewExtension(path, WORKSPACE_DOCX_PREVIEW_EXTENSIONS);
+}
+
+/** A captured attachment the clients render in place instead of only offering to save. */
+export function isDocxPreviewFile(file: {
+  readonly name: string;
+  readonly mimeType?: string;
+}): boolean {
+  const mime = file.mimeType?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+  if (mime === DOCX_MIME_TYPE) return true;
+  const generic = !mime || mime === "application/octet-stream" || mime === "text/plain";
+  return generic && isWorkspaceDocxPreviewPath(file.name);
+}
+
 /** File viewers receive literal filesystem paths, not Markdown URLs. */
 export function isWorkspaceVideoPreviewPath(path: string): boolean {
   return videoMimeType({ name: path, mimeType: "" }) !== null;
@@ -194,5 +221,9 @@ export function isWorkspaceAudioPreviewPath(path: string): boolean {
 }
 
 export function isWorkspacePreviewEntryPath(path: string): boolean {
-  return isWorkspaceBrowserPreviewPath(path) || isWorkspaceImagePreviewPath(path);
+  return (
+    isWorkspaceBrowserPreviewPath(path) ||
+    isWorkspaceImagePreviewPath(path) ||
+    isWorkspaceDocxPreviewPath(path)
+  );
 }

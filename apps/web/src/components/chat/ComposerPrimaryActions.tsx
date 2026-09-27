@@ -41,15 +41,15 @@ const formatPendingPrimaryActionLabel = (input: {
   questionIndex: number;
 }) => {
   if (input.isResponding) {
-    return "Submitting...";
+    return "Envoi…";
   }
   if (input.compact) {
-    return input.isLastQuestion ? "Submit" : "Next";
+    return input.isLastQuestion ? "Valider" : "Suivant";
   }
   if (!input.isLastQuestion) {
-    return "Next question";
+    return "Question suivante";
   }
-  return input.questionIndex > 0 ? "Submit answers" : "Submit answer";
+  return input.questionIndex > 0 ? "Envoyer les réponses" : "Envoyer la réponse";
 };
 
 // The composer's labeled primary actions (Submit, Refine, Implement) share the send button's
@@ -100,7 +100,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
       )}
       {...pointerFocusProps}
       onClick={onInterrupt}
-      aria-label="Stop generation"
+      aria-label="Arrêter la génération"
     >
       <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
         <rect x="2" y="2" width="8" height="8" rx="1.5" />
@@ -166,7 +166,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           {...pointerFocusProps}
           disabled={isSendBusy || isSendDisabled || isConnecting || isEnvironmentUnavailable}
         >
-          {isConnecting || isSendBusy ? "Sending..." : "Refine"}
+          {isConnecting || isSendBusy ? "Envoi…" : "Affiner"}
         </button>
       );
     }
@@ -179,7 +179,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
           {...pointerFocusProps}
           disabled={isSendBusy || isSendDisabled || isConnecting || isEnvironmentUnavailable}
         >
-          {isConnecting || isSendBusy ? "Sending..." : "Implement"}
+          {isConnecting || isSendBusy ? "Envoi…" : "Implémenter"}
         </button>
         <Menu>
           <MenuTrigger
@@ -190,7 +190,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
                   messageActionPillClassName,
                   "h-9 rounded-l-none border-l border-message-action-foreground/20 px-2 sm:h-8",
                 )}
-                aria-label="Implementation actions"
+                aria-label="Actions d'implémentation"
                 {...pointerFocusProps}
                 disabled={isSendBusy || isSendDisabled || isConnecting || isEnvironmentUnavailable}
               />
@@ -203,7 +203,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
               disabled={isSendBusy || isSendDisabled || isConnecting || isEnvironmentUnavailable}
               onClick={() => void onImplementPlanInNewThread()}
             >
-              Implement in a new thread
+              Implémenter dans un nouveau thread
             </MenuItem>
           </MenuPopup>
         </Menu>
@@ -230,18 +230,18 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
       }
       aria-label={
         isEnvironmentUnavailable
-          ? "Environment disconnected"
+          ? "Environnement déconnecté"
           : sendDisabledReason
             ? sendDisabledReason
             : isConnecting
-              ? "Connecting"
+              ? "Connexion…"
               : isPreparingWorktree
-                ? "Preparing worktree"
+                ? "Préparation du worktree"
                 : isSendBusy
-                  ? "Sending"
+                  ? "Envoi…"
                   : isRunning
-                    ? "Queue message"
-                    : "Send message"
+                    ? "Mettre le message en file d'attente"
+                    : "Envoyer le message"
       }
     >
       {stageBackdropVariant ? (

@@ -735,6 +735,9 @@ function formatOutgoingPrompt(params: {
 }
 const SCRIPT_TERMINAL_COLS = 120;
 const SCRIPT_TERMINAL_ROWS = 30;
+// Quick deploy fallback when the project has no action named "Déployer":
+// deploy the linked provider found in the workspace, after checking auth.
+const DEPLOY_COMMAND = `if [ -f .vercel/project.json ] || [ -f vercel.json ]; then if command -v vercel >/dev/null 2>&1; then vercel whoami && vercel --prod --yes; else echo "CLI Vercel introuvable : installe-la avec « npm i -g vercel » puis relance."; fi; elif [ -f netlify.toml ] || [ -d .netlify ]; then netlify deploy --prod; elif grep -q '"deploy"[[:space:]]*:' package.json 2>/dev/null; then npm run deploy; else echo "Aucun déploiement détecté ici (Vercel / Netlify / npm run deploy)."; fi`;
 
 function isCompactCommandMessage(message: ChatMessage): boolean {
   const text = message.text.trim().toLowerCase();
@@ -4312,6 +4315,22 @@ export default function ChatView(props: ChatViewProps) {
     );
   }, []);
 
+  // One-click deploy after a push: a project action named "Déployer" wins,
+  // otherwise DEPLOY_COMMAND detects the linked provider in the workspace.
+  const runDeploy = useCallback(() => {
+    const configured = activeProjectScripts.find((script) => /d[ée]ploy/i.test(script.name));
+    void runProjectScriptRef.current(
+      configured ?? {
+        id: "quick-deploy",
+        name: "Déployer",
+        command: DEPLOY_COMMAND,
+        icon: "build",
+        runOnWorktreeCreate: false,
+      },
+      { preferNewTerminal: true, rememberAsLastInvoked: false },
+    );
+  }, [activeProjectScripts]);
+
   const supportsProjectSettingsOverrides =
     environmentById.get(environmentId)?.serverConfig?.environment.capabilities
       .projectSettingsOverrides === true;
@@ -4466,8 +4485,9 @@ export default function ChatView(props: ChatViewProps) {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Could not delete action",
-            description: error instanceof Error ? error.message : "An unexpected error occurred.",
+            title: "Impossible de supprimer l'action",
+            description:
+              error instanceof Error ? error.message : "Une erreur inattendue est survenue.",
           }),
         );
       }
@@ -7944,7 +7964,7 @@ export default function ChatView(props: ChatViewProps) {
         const title = truncate(
           assistantCitationsToPlainText(stripInlineContextReferences(trimmed)).trim() ||
             composerAttachmentsSnapshot[0]?.name ||
-            "New thread",
+            "Nouveau thread",
         );
         promptRef.current = "";
         clearComposerDraftContent(composerDraftTarget);
@@ -8277,7 +8297,7 @@ export default function ChatView(props: ChatViewProps) {
       } else if (composerPreviewAnnotationsSnapshot.length > 0) {
         titleSeed = previewAnnotationContextLabel(composerPreviewAnnotationsSnapshot[0]!);
       } else {
-        titleSeed = "New thread";
+        titleSeed = "Nouveau thread";
       }
     }
     const title = truncate(titleSeed);
@@ -9769,6 +9789,7 @@ export default function ChatView(props: ChatViewProps) {
               ? { onOpenProjectSettings: handleOpenDraftProjectSettings }
               : {})}
             onRunProjectScript={runProjectScript}
+            onDeployAfterPush={runDeploy}
             onAddProjectScript={saveProjectScript}
             onUpdateProjectScript={updateProjectScript}
             onDeleteProjectScript={deleteProjectScript}

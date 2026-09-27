@@ -2,7 +2,11 @@ import { filePreviewDelimiter } from "@t3tools/shared/delimitedPreview";
 import type { EnvironmentId } from "@t3tools/contracts";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
 import { readFilePreviewResponse } from "@t3tools/client-runtime/file-preview";
-import { filePreviewKind, FILE_TEXT_PREVIEW_MAX_BYTES } from "@t3tools/shared/filePreview";
+import {
+  filePreviewKind,
+  FILE_TEXT_PREVIEW_MAX_BYTES,
+  isDocxPreviewFile,
+} from "@t3tools/shared/filePreview";
 import {
   CheckIcon,
   ChevronRightIcon,
@@ -37,6 +41,7 @@ import {
 } from "./fileSurfaceChrome";
 
 const SourcePreview = lazy(() => import("./ReadOnlySourcePreview"));
+const DocxDocument = lazy(() => import("./DocxDocument"));
 
 /** Signed asset URLs live for an hour; treat anything older than this as worth re-minting. */
 const STALE_URL_MS = 5 * 60_000;
@@ -73,6 +78,7 @@ export function AttachmentFilePreview(props: {
   onClose?: () => void;
 }) {
   const kind = filePreviewKind(props);
+  const isDocx = isDocxPreviewFile(props);
   const delimiter = filePreviewDelimiter(props);
   const renderedMode =
     kind === "markdown" ? "markdown" : kind === "html" ? "html" : delimiter ? "table" : null;
@@ -250,6 +256,10 @@ export function AttachmentFilePreview(props: {
     ) : (
       <ReadOnlySourcePreview name={props.name} text={content.text} />
     )
+  ) : isDocx ? (
+    <Suspense fallback={<FileSurfaceLoading />}>
+      <DocxDocument name={props.name} source={props.file ?? url} onError={setError} />
+    </Suspense>
   ) : kind === "pdf" || kind === "html" ? (
     <BrowserDocumentFrame src={url} title={props.name} pdf={kind === "pdf"} />
   ) : kind === "audio" ? (

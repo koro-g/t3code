@@ -9,6 +9,7 @@ import type {
 import { filePreviewDelimiter } from "@t3tools/shared/delimitedPreview";
 import {
   isWorkspaceAudioPreviewPath,
+  isWorkspaceDocxPreviewPath,
   isWorkspaceImagePreviewPath,
   isWorkspaceVideoPreviewPath,
 } from "@t3tools/shared/filePreview";
@@ -23,7 +24,7 @@ import {
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
 import { Code2, Eye, FolderTree, Globe2, Table2, WrapTextIcon } from "lucide-react";
 import * as Schema from "effect/Schema";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPreview";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
@@ -90,6 +91,8 @@ import {
   setProjectFileQueryData,
   useProjectFileQuery,
 } from "./projectFilesQueryState";
+
+const DocxDocument = lazy(() => import("./DocxDocument"));
 
 interface FilePreviewPanelProps {
   environmentId: EnvironmentId;
@@ -224,6 +227,73 @@ function WorkspaceBrowserPreview(props: {
       title={props.title}
       pdf={isPdfPreviewFile(props.absolutePath)}
     />
+  );
+}
+
+/**
+ * A Word document rendered in place from its signed asset URL. Workspace files
+ * are served from their exact path; a document outside the workspace is served
+ * on its own like other host documents.
+ */
+function WorkspaceDocxPreview(props: {
+  readonly environmentId: EnvironmentId;
+  readonly threadRef: ScopedThreadRef;
+  readonly absolutePath: string;
+  readonly workspaceRoot: string;
+  readonly title: string;
+  readonly workspaceMutationId: string | null;
+}) {
+  const insideWorkspace =
+    mediaFileReference(props.absolutePath, props.workspaceRoot).relativePath !== undefined;
+  const resource = useMemo(
+    () => ({
+      _tag: insideWorkspace ? ("workspace-file" as const) : ("media-file" as const),
+      threadId: props.threadRef.threadId,
+      path: props.absolutePath,
+    }),
+    [insideWorkspace, props.threadRef.threadId, props.absolutePath],
+  );
+  const assetUrl = useAssetUrlState(props.environmentId, resource);
+  const refreshAssetUrl = useAssetUrlRefresh(props.environmentId, resource);
+  const [renderError, setRenderError] = useState<string | null>(null);
+  const [mintRetries, setMintRetries] = useState(0);
+  // A thread created moments ago may not be projected yet, which fails the
+  // first mint; retry twice before surfacing the failure.
+  useEffect(() => {
+    if (assetUrl._tag !== "Failure" || mintRetries >= 2) return;
+    const timer = setTimeout(
+      () => {
+        setMintRetries((count) => count + 1);
+        void refreshAssetUrl().catch(() => undefined);
+      },
+      600 * (mintRetries + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [assetUrl, mintRetries, refreshAssetUrl]);
+  const revisionSuffix =
+    props.workspaceMutationId === null
+      ? ""
+      : `${assetUrl._tag === "Success" && assetUrl.url.includes("?") ? "&" : "?"}workspace-revision=${encodeURIComponent(props.workspaceMutationId)}`;
+  const url = assetUrl._tag === "Success" ? `${assetUrl.url}${revisionSuffix}` : null;
+  const mintExhausted = assetUrl._tag === "Failure" && mintRetries >= 2;
+
+  if (renderError !== null || mintExhausted) {
+    return (
+      <FileSurfaceFailure
+        message={renderError ?? "Impossible de charger le document Word."}
+        onRetry={() => {
+          setRenderError(null);
+          setMintRetries(0);
+          void refreshAssetUrl().catch(() => undefined);
+        }}
+      />
+    );
+  }
+  if (url === null) return <FileSurfaceLoading />;
+  return (
+    <Suspense fallback={<FileSurfaceLoading />}>
+      <DocxDocument name={props.title} source={url} onError={setRenderError} />
+    </Suspense>
   );
 }
 
@@ -938,6 +1008,7 @@ export default function FilePreviewPanel({
   // PDFs have no text to show; HTML has, and can toggle between page and source.
   const isPdf = relativePath !== null && isPdfPreviewFile(relativePath);
   const isHtml = relativePath !== null && !isPdf && isBrowserPreviewFile(relativePath);
+  const isDocx = relativePath !== null && isWorkspaceDocxPreviewPath(relativePath);
   // A file outside the workspace (an absolute path) is shown, never edited.
   const isHostFile =
     attachment !== undefined || (relativePath !== null && isAbsolutePath(relativePath));
@@ -1031,10 +1102,10 @@ export default function FilePreviewPanel({
     enabled:
       attachment === undefined &&
       relativePath !== null &&
-      // Media and PDFs never show their contents, so re-reading them on every
-      // workspace mutation is waste. A folder named like one still re-reads, so
-      // it notices when the path becomes a file.
-      (isDirectory || (!isMedia && !isPdf)) &&
+      // Media, PDFs and Word documents never show their contents, so re-reading
+      // them on every workspace mutation is waste. A folder named like one still
+      // re-reads, so it notices when the path becomes a file.
+      (isDirectory || (!isMedia && !isPdf && !isDocx)) &&
       !selectedFilePending,
     mutationId: workspaceMutationId,
     refresh: file.refresh,
@@ -1215,6 +1286,16 @@ export default function FilePreviewPanel({
               absolutePath={absolutePath}
               workspaceRoot={cwd}
               alt={relativePath}
+              workspaceMutationId={workspaceMutationId}
+            />
+          ) : relativePath && isDocx && absolutePath ? (
+            <WorkspaceDocxPreview
+              key={absolutePath}
+              environmentId={environmentId}
+              threadRef={threadRef}
+              absolutePath={absolutePath}
+              workspaceRoot={cwd}
+              title={relativePath}
               workspaceMutationId={workspaceMutationId}
             />
           ) : relativePath && renderBrowserFile && absolutePath ? (

@@ -88,8 +88,8 @@ export function PullRequestMarkdownEditor({
           if (mode === "write" || mode === "preview") setPreview(mode === "preview");
         }}
       >
-        <Toggle value="write">Write</Toggle>
-        <Toggle value="preview">Preview</Toggle>
+        <Toggle value="write">Écrire</Toggle>
+        <Toggle value="preview">Aperçu</Toggle>
       </ToggleGroup>
       {preview ? (
         <div className="rounded-lg border border-border/60 px-3 py-2">

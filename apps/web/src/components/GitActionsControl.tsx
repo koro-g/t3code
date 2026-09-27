@@ -36,6 +36,7 @@ import {
   GitCommitIcon,
   InfoIcon,
   LockIcon,
+  RocketIcon,
   GlobeIcon,
 } from "lucide-react";
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
@@ -126,6 +127,11 @@ interface GitActionsControlProps {
    * place it against, in which case it still opens in the browser.
    */
   onOpenPullRequest?: ((number: number) => void) | undefined;
+  /**
+   * Runs the project's deploy step after a successful commit-&-push. Absent
+   * when the client has no deploy runner wired for the active project.
+   */
+  onDeployAfterPush?: (() => void) | undefined;
 }
 
 interface PendingDefaultBranchAction {
@@ -134,6 +140,7 @@ interface PendingDefaultBranchAction {
   includesCommit: boolean;
   commitMessage?: string;
   onConfirmed?: () => void;
+  onSucceeded?: () => void;
   filePaths?: string[];
 }
 
@@ -160,6 +167,7 @@ interface RunGitActionWithToastInput {
   action: GitStackedAction;
   commitMessage?: string;
   onConfirmed?: () => void;
+  onSucceeded?: () => void;
   skipDefaultBranchPrompt?: boolean;
   statusOverride?: VcsStatusResult | null;
   featureBranch?: boolean;
@@ -948,6 +956,7 @@ export default function GitActionsControl({
   activeThreadRef,
   draftId,
   onOpenPullRequest,
+  onDeployAfterPush,
 }: GitActionsControlProps) {
   const updateThreadMetadata = useAtomCommand(
     threadEnvironment.updateMetadata,
@@ -1228,6 +1237,7 @@ export default function GitActionsControl({
       action,
       commitMessage,
       onConfirmed,
+      onSucceeded,
       skipDefaultBranchPrompt = false,
       statusOverride,
       featureBranch = false,
@@ -1261,6 +1271,7 @@ export default function GitActionsControl({
           includesCommit,
           ...(commitMessage ? { commitMessage } : {}),
           ...(onConfirmed ? { onConfirmed } : {}),
+          ...(onSucceeded ? { onSucceeded } : {}),
           ...(filePaths ? { filePaths } : {}),
         });
         return;
@@ -1456,17 +1467,23 @@ export default function GitActionsControl({
           data: successToastData,
         });
       }
+
+      // Runs only on the success path, so a failed commit or push never
+      // reaches the deploy step.
+      onSucceeded?.();
     },
   );
 
   const continuePendingDefaultBranchAction = () => {
     if (!pendingDefaultBranchAction) return;
-    const { action, commitMessage, onConfirmed, filePaths } = pendingDefaultBranchAction;
+    const { action, commitMessage, onConfirmed, onSucceeded, filePaths } =
+      pendingDefaultBranchAction;
     setPendingDefaultBranchAction(null);
     void runGitActionWithToast({
       action,
       ...(commitMessage ? { commitMessage } : {}),
       ...(onConfirmed ? { onConfirmed } : {}),
+      ...(onSucceeded ? { onSucceeded } : {}),
       ...(filePaths ? { filePaths } : {}),
       skipDefaultBranchPrompt: true,
     });
@@ -1503,6 +1520,21 @@ export default function GitActionsControl({
       skipDefaultBranchPrompt: true,
     });
   };
+
+  // Commit & push, then hand off to the project's deploy step. The deploy runs
+  // only after the stacked git action reports success.
+  const runCommitPushAndDeploy = () => {
+    if (!onDeployAfterPush) return;
+    void runGitActionWithToast({
+      action: quickAction.action === "push" ? "push" : "commit_push",
+      onSucceeded: onDeployAfterPush,
+    });
+  };
+  const deployActionAvailable =
+    onDeployAfterPush !== undefined &&
+    !quickAction.disabled &&
+    !quickActionDisabledReason &&
+    (quickAction.action === "commit_push" || quickAction.action === "push");
 
   const runQuickAction = () => {
     if (quickAction.kind === "open_pr") {
@@ -1749,7 +1781,7 @@ export default function GitActionsControl({
           >
             <GitBranchPlusIcon className="size-4" />
             <MenuItemLabel>
-              {initAction.isPending ? "Initializing..." : "Initialize Git"}
+              {initAction.isPending ? "Initialisation…" : "Initialiser Git"}
             </MenuItemLabel>
           </MenuItem>
         ) : (
@@ -1767,6 +1799,16 @@ export default function GitActionsControl({
               />
               <MenuItemLabel>{quickAction.label}</MenuItemLabel>
             </MenuItem>
+            {deployActionAvailable ? (
+              <MenuItem
+                density={presentation === "menu" ? "touch" : "default"}
+                disabled={isGitActionRunning || quickAction.disabled}
+                onClick={runCommitPushAndDeploy}
+              >
+                <RocketIcon className="size-4" />
+                <MenuItemLabel>Commit, push & déployer</MenuItemLabel>
+              </MenuItem>
+            ) : null}
             {quickActionDisabledReason && (
               <p className="max-w-64 px-2 py-1.5 text-xs text-warning">
                 {quickActionDisabledReason}
@@ -1789,7 +1831,7 @@ export default function GitActionsControl({
         <Button variant="outline" size="xs" disabled={initAction.isPending} onClick={initializeGit}>
           <GitBranchPlusIcon className="size-3.5" aria-hidden />
           <span className="ml-0.5">
-            {initAction.isPending ? "Initializing..." : "Initialize Git"}
+            {initAction.isPending ? "Initialisation…" : "Initialiser Git"}
           </span>
         </Button>
       ) : (
@@ -1825,6 +1867,20 @@ export default function GitActionsControl({
               </span>
             </Button>
           )}
+          {deployActionAvailable ? (
+            <Button
+              variant="outline"
+              size="xs"
+              disabled={isGitActionRunning || quickAction.disabled}
+              onClick={runCommitPushAndDeploy}
+              aria-label="Commit, push & déployer"
+            >
+              <RocketIcon aria-hidden="true" className="size-3.5" />
+              <span className="sr-only @3xl/header-actions:not-sr-only @3xl/header-actions:ml-0.5">
+                Déployer
+              </span>
+            </Button>
+          ) : null}
           <GroupSeparator className="hidden @3xl/header-actions:block" />
           <Menu
             onOpenChange={(open) => {

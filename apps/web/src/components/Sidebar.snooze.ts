@@ -49,7 +49,7 @@ export function snoozeWakeDescription(
   startOfToday.setHours(0, 0, 0, 0);
   const dayDelta = Math.floor((wake.getTime() - startOfToday.getTime()) / DAY_MS);
   if (dayDelta === 0) return time;
-  if (dayDelta === 1) return `tomorrow ${time}`;
+  if (dayDelta === 1) return `demain ${time}`;
   const weekday = wake.toLocaleDateString(undefined, { weekday: "short" });
   if (dayDelta < 7) return `${weekday} ${time}`;
   const date = wake.toLocaleDateString(undefined, { month: "short", day: "numeric" });

@@ -6,23 +6,24 @@ export const runtimeModeConfig: Record<
   { label: string; description: string; icon: LucideIcon }
 > = {
   "approval-required": {
-    label: "Supervised",
-    description: "Ask before commands and file changes.",
+    label: "Supervisé",
+    description: "Demander avant les commandes et modifications de fichiers.",
     icon: LockIcon,
   },
   "auto-accept-edits": {
-    label: "Auto-accept edits",
-    description: "Auto-approve edits, ask before other actions.",
+    label: "Modifs auto-acceptées",
+    description: "Approuver automatiquement les modifications, demander avant les autres actions.",
     icon: PenLineIcon,
   },
   auto: {
     label: "Auto",
-    description: "Supported providers approve routine actions; others still ask.",
+    description:
+      "Les providers compatibles approuvent les actions courantes ; les autres demandent.",
     icon: SparklesIcon,
   },
   "full-access": {
-    label: "Full access",
-    description: "Allow commands and edits without prompts.",
+    label: "Accès total",
+    description: "Autoriser commandes et modifications sans confirmation.",
     icon: LockOpenIcon,
   },
 };

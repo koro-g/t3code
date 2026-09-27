@@ -18,6 +18,7 @@ import {
 import {
   audioMimeTypeFromExtension,
   hostPreviewMimeTypeFromExtension,
+  isWorkspaceDocxPreviewPath,
   isWorkspaceImagePreviewPath,
   isWorkspacePreviewEntryPath,
   WORKSPACE_BROWSER_PREVIEW_EXTENSIONS,
@@ -394,21 +395,23 @@ const finalizeWorkspaceFileAsset = Effect.fn("AssetAccess.finalizeWorkspaceFileA
       ? yield* readImageDimensionsFromHeader(canonicalFile)
       : null;
     return {
-      claims: isWorkspaceImagePreviewPath(resolved.relativePath)
-        ? {
-            version: 1 as const,
-            kind: "workspace-file-exact" as const,
-            workspaceRoot: canonicalWorkspaceRoot,
-            relativePath: resolved.relativePath,
-            expiresAt: input.expiresAt,
-          }
-        : {
-            version: 1 as const,
-            kind: "workspace-file" as const,
-            workspaceRoot: canonicalWorkspaceRoot,
-            baseRelativePath: path.dirname(resolved.relativePath),
-            expiresAt: input.expiresAt,
-          },
+      claims:
+        isWorkspaceImagePreviewPath(resolved.relativePath) ||
+        isWorkspaceDocxPreviewPath(resolved.relativePath)
+          ? {
+              version: 1 as const,
+              kind: "workspace-file-exact" as const,
+              workspaceRoot: canonicalWorkspaceRoot,
+              relativePath: resolved.relativePath,
+              expiresAt: input.expiresAt,
+            }
+          : {
+              version: 1 as const,
+              kind: "workspace-file" as const,
+              workspaceRoot: canonicalWorkspaceRoot,
+              baseRelativePath: path.dirname(resolved.relativePath),
+              expiresAt: input.expiresAt,
+            },
       fileName: path.basename(resolved.relativePath),
       imageDimensions,
     };

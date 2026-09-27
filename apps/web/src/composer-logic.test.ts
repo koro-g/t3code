@@ -232,6 +232,35 @@ describe("detectComposerTrigger", () => {
     });
   });
 
+  it("detects a slash command in the middle of a message", () => {
+    const text = "fais ceci /rev";
+    const trigger = detectComposerTrigger(text, text.length);
+
+    expect(trigger).toEqual({
+      kind: "slash-command",
+      query: "rev",
+      rangeStart: "fais ceci ".length,
+      rangeEnd: text.length,
+    });
+  });
+
+  it("detects an indented slash command", () => {
+    const text = "  /mo";
+    const trigger = detectComposerTrigger(text, text.length);
+
+    expect(trigger).toEqual({
+      kind: "slash-command",
+      query: "mo",
+      rangeStart: 2,
+      rangeEnd: text.length,
+    });
+  });
+
+  it("ignores slashes inside words and paths", () => {
+    expect(detectComposerTrigger("voir src/com", "voir src/com".length)).toBeNull();
+    expect(detectComposerTrigger("24/7", "24/7".length)).toBeNull();
+  });
+
   it.each(["$", "€", "£", "¥", "₹", "₩", "₿", "𑿝"])(
     "detects %sskill trigger at cursor",
     (prefix) => {

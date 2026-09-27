@@ -305,7 +305,7 @@ export function UsagePage() {
     <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-2 xl:flex">
       <WorkspaceBreadcrumb ariaLabel="Usage breadcrumb" className="col-span-2 min-w-0">
         <WorkspaceBreadcrumbItem>
-          <h1>Usage</h1>
+          <h1>Utilisation</h1>
         </WorkspaceBreadcrumbItem>
         <WorkspaceBreadcrumbSeparator />
         <WorkspaceBreadcrumbItem current className="min-w-10">

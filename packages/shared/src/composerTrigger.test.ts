@@ -15,6 +15,16 @@ describe("detectComposerTrigger", () => {
       });
     },
   );
+
+  it("detects a slash command in the middle of a message", () => {
+    const text = "do this /comp";
+    expect(detectComposerTrigger(text, text.length)).toEqual({
+      kind: "slash-command",
+      query: "comp",
+      rangeStart: 8,
+      rangeEnd: text.length,
+    });
+  });
 });
 
 describe("serializeComposerFileLink", () => {

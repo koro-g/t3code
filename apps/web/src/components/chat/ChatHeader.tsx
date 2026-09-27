@@ -69,6 +69,8 @@ interface ChatHeaderProps {
   rightPanelOpen: boolean;
   gitCwd: string | null;
   readonly onOpenPullRequest?: ((number: number) => void) | undefined;
+  /** Runs the project's deploy after a successful commit & push, when wired. */
+  onDeployAfterPush?: (() => void) | undefined;
   onNewThreadInProject: () => void;
   onOpenProjectSettings?: (() => void) | undefined;
   onRunProjectScript: (script: ProjectScript) => void;
@@ -138,6 +140,7 @@ export const ChatHeader = memo(function ChatHeader({
   rightPanelOpen,
   gitCwd,
   onOpenPullRequest,
+  onDeployAfterPush,
   onNewThreadInProject,
   onOpenProjectSettings,
   onRunProjectScript,
@@ -389,6 +392,7 @@ export const ChatHeader = memo(function ChatHeader({
             gitCwd={gitCwd}
             activeThreadRef={scopeThreadRef(activeThreadEnvironmentId, activeThreadId)}
             onOpenPullRequest={onOpenPullRequest}
+            onDeployAfterPush={onDeployAfterPush}
             {...(draftId ? { draftId } : {})}
           />
         </>

@@ -174,14 +174,14 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
         <SidebarMenuItem className="min-w-0 flex-1">
           <SidebarMenuButton onClick={handleBackClick}>
             <ArrowLeftIcon />
-            <span>Back</span>
+            <span>Retour</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       ) : (
         <>
           <SidebarUtilityItem
             icon={<SettingsIcon />}
-            label="Settings"
+            label="Réglages"
             onClick={handleSettingsClick}
           />
           {pullRequestsSupported ? (
@@ -193,7 +193,7 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
           ) : null}
           <SidebarUtilityItem
             icon={<ChartNoAxesColumnIcon />}
-            label="Usage"
+            label="Utilisation"
             onClick={handleUsageClick}
           />
         </>

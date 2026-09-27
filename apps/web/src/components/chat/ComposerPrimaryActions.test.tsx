@@ -100,7 +100,7 @@ describe("ComposerPrimaryActions", () => {
   });
 
   it("offers Stop generation while a running turn is waiting for user input", () => {
-    expect(renderPendingActions(true)).toContain('aria-label="Stop generation"');
+    expect(renderPendingActions(true)).toContain('aria-label="Arrêter la génération"');
   });
 
   it("does not offer Stop generation for a pending request without a running turn", () => {
@@ -127,15 +127,15 @@ describe("ComposerPrimaryActions", () => {
   it("renders a queue action alongside stop while running with a sendable draft", () => {
     const markup = renderRunningActions(true);
 
-    expect(markup).toContain('aria-label="Stop generation"');
-    expect(markup).toContain('aria-label="Queue message"');
+    expect(markup).toContain('aria-label="Arrêter la génération"');
+    expect(markup).toContain('aria-label="Mettre le message en file d&#x27;attente"');
     expect(markup).toContain('type="submit"');
   });
 
   it("keeps stop as the only action while running with an empty composer", () => {
     const markup = renderRunningActions(false);
 
-    expect(markup).toContain('aria-label="Stop generation"');
-    expect(markup).not.toContain('aria-label="Queue message"');
+    expect(markup).toContain('aria-label="Arrêter la génération"');
+    expect(markup).not.toContain('aria-label="Mettre le message en file d&#x27;attente"');
   });
 });

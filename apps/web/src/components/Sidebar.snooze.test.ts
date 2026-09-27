@@ -7,6 +7,13 @@ function localDate(year: number, month: number, day: number, hour: number, minut
   return new Date(year, month - 1, day, hour, minute, 0, 0);
 }
 
+// Weekday names come out of Intl, so they follow the machine's locale: "Mon"
+// on en-US, "lun." on fr-FR. Asking Intl for the same day keeps the assertion
+// about *which* weekday, not about one language.
+function shortWeekday(date: Date): string {
+  return date.toLocaleDateString(undefined, { weekday: "short" });
+}
+
 describe("resolveSnoozePresets", () => {
   it("offers one hour, three hours, evening, tomorrow, and next week in the morning", () => {
     // Wednesday 2026-04-08 10:00 local.
@@ -37,12 +44,12 @@ describe("resolveSnoozePresets", () => {
     for (const preset of presets) {
       // Day words live in the label column; the time column is time-only
       // (plus a weekday for next week, which names a different day).
-      expect(preset.whenLabel.toLowerCase()).not.toContain("tomorrow");
+      expect(preset.whenLabel.toLowerCase()).not.toContain("demain");
     }
     const tomorrow = presets.find((preset) => preset.id === "tomorrow");
     expect(tomorrow!.whenLabel).toMatch(/9/);
     const nextWeek = presets.find((preset) => preset.id === "next-week");
-    expect(nextWeek!.whenLabel).toMatch(/Mon/);
+    expect(nextWeek!.whenLabel).toContain(shortWeekday(localDate(2026, 4, 13, 9)));
   });
 
   it("drops the evening preset once evening is near or past", () => {
@@ -73,15 +80,15 @@ describe("resolveSnoozePresets", () => {
 describe("snoozeWakeDescription", () => {
   const now = localDate(2026, 4, 8, 10);
 
-  it("uses bare time today, 'tomorrow' next day, weekday within the week", () => {
+  it("uses bare time today, 'demain' next day, weekday within the week", () => {
     expect(
       snoozeWakeDescription(localDate(2026, 4, 8, 18).toISOString(), now, "locale"),
-    ).not.toContain("tomorrow");
+    ).not.toContain("demain");
     expect(snoozeWakeDescription(localDate(2026, 4, 9, 9).toISOString(), now, "locale")).toContain(
-      "tomorrow",
+      "demain",
     );
-    expect(snoozeWakeDescription(localDate(2026, 4, 13, 9).toISOString(), now, "locale")).toMatch(
-      /Mon/,
+    expect(snoozeWakeDescription(localDate(2026, 4, 13, 9).toISOString(), now, "locale")).toContain(
+      shortWeekday(localDate(2026, 4, 13, 9)),
     );
   });
 

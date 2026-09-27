@@ -227,7 +227,7 @@ export function DraftHeroHeadline({
       onClick={openAddProject}
       className="pointer-events-auto inline cursor-pointer border-muted-foreground/35 border-b border-dotted text-muted-foreground/60 transition-colors hover:border-muted-foreground/60 hover:text-muted-foreground/80 focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
-      {activeProjectTitle ?? "Add a project"}
+      {activeProjectTitle ?? "Ajouter un projet"}
     </button>
   );
 
@@ -236,10 +236,10 @@ export function DraftHeroHeadline({
   // in the h1; without an explicit label its widget state bleeds into the
   // announced phrase.
   const headingLabel = hasResolvedProject
-    ? `What should we build in ${activeProjectDisplayName}?`
+    ? `Que veux-tu construire dans ${activeProjectDisplayName} ?`
     : canChooseProject
-      ? `${activeProjectDisplayName ?? "Choose a project"} to start`
-      : "Add a project to start";
+      ? `${activeProjectDisplayName ?? "Choisis un projet"} pour commencer`
+      : "Ajoute un projet pour commencer";
 
   return (
     <h1
@@ -247,11 +247,11 @@ export function DraftHeroHeadline({
       className="mx-auto w-full max-w-5xl text-center font-normal text-2xl text-foreground tracking-tight sm:text-3xl"
     >
       {hasResolvedProject ? (
-        <>What should we build in {projectSelector}?</>
+        <>Que veux-tu construire dans {projectSelector} ?</>
       ) : canChooseProject ? (
-        <>{projectSelector} to start</>
+        <>{projectSelector} pour commencer</>
       ) : (
-        <>Add a project to start</>
+        <>Ajoute un projet pour commencer</>
       )}
     </h1>
   );

@@ -539,7 +539,7 @@ export default function FileBrowserPanel({
       ) : null}
       {query.trim() && pathSearch.truncated && !pathSearch.isPending ? (
         <div className="px-3 py-1 text-xs text-muted-foreground">
-          More matches available. Refine your search.
+          D'autres résultats sont disponibles. Affine ta recherche.
         </div>
       ) : null}
       {(isPending || pathSearch.isPending) && (

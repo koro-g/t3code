@@ -143,6 +143,8 @@ import { threadEnvironment } from "../state/threads";
 import { useEnvironmentQuery } from "../state/query";
 import { useThreadSearch } from "../state/queries";
 import { useAtomCommand } from "../state/use-atom-command";
+import { projectEnvironment } from "../state/projects";
+import { newProjectId } from "../lib/utils";
 import {
   buildThreadRouteParams,
   resolveActiveThreadRouteRef,
@@ -255,6 +257,9 @@ import {
 // stays behind an explicit Show more.
 const SETTLED_TAIL_INITIAL_COUNT = 10;
 const SETTLED_TAIL_PAGE_COUNT = 25;
+// The quick-chat project works on the whole computer: its workspace root is
+// the home directory, resolved server-side from "~".
+const QUICK_CHAT_PROJECT_TITLE = "Tout le PC";
 // Fresh keys deliberately reset both shelves to collapsed for existing users.
 const SETTLED_SHELF_EXPANDED_KEY = "t3code:sidebar:settled-expanded";
 const SNOOZED_SHELF_EXPANDED_KEY = "t3code:sidebar:snoozed-expanded";
@@ -461,7 +466,7 @@ function SnoozeMenuButton(props: {
               render={
                 <button
                   type="button"
-                  aria-label="Snooze thread"
+                  aria-label="Mettre en pause"
                   onClick={(event) => event.stopPropagation()}
                   onDoubleClick={(event) => event.stopPropagation()}
                   className="inline-flex h-full cursor-pointer items-center gap-0.5 rounded-md bg-transparent px-1.5 text-xs text-muted-foreground hover:text-foreground"
@@ -472,7 +477,7 @@ function SnoozeMenuButton(props: {
         >
           <ClockIcon className="size-3" />
         </TooltipTrigger>
-        <TooltipPopup>Snooze thread</TooltipPopup>
+        <TooltipPopup>Mettre en pause</TooltipPopup>
       </Tooltip>
       <MenuPopup side="bottom" align="end">
         {presets.map((preset) => (
@@ -731,7 +736,7 @@ const SidebarDraftRow = memo(function SidebarDraftRow(props: {
       : `${attachmentCount} attachment${attachmentCount === 1 ? "" : "s"}`;
   const accessibility = resolveSidebarRowAccessibility({
     title: preview,
-    statusLabel: "Unsent draft",
+    statusLabel: "Brouillon non envoyé",
     projectDisplayName: props.projectDisplayName,
     isActive: props.isActive,
   });
@@ -788,7 +793,7 @@ const SidebarDraftRow = memo(function SidebarDraftRow(props: {
                   render={
                     <button
                       type="button"
-                      aria-label="Discard draft"
+                      aria-label="Supprimer le brouillon"
                       onClick={handleDiscard}
                       className="pointer-events-none inline-flex cursor-pointer items-center rounded-md bg-transparent px-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover/sidebar-row:pointer-events-auto group-hover/sidebar-row:opacity-100"
                     >
@@ -796,7 +801,7 @@ const SidebarDraftRow = memo(function SidebarDraftRow(props: {
                     </button>
                   }
                 />
-                <TooltipPopup side="top">Discard draft</TooltipPopup>
+                <TooltipPopup side="top">Supprimer le brouillon</TooltipPopup>
               </Tooltip>
             </span>
           </div>
@@ -939,31 +944,31 @@ const dropVerbBadge: Record<SidebarDropVerb, ReactNode> = {
   pin: (
     <>
       <PinIcon aria-hidden className="size-3" />
-      Pin
+      Épingler
     </>
   ),
   unpin: (
     <>
       <PinOffIcon aria-hidden className="size-3" />
-      Unpin
+      Détacher
     </>
   ),
   settle: (
     <>
       <CircleCheckIcon aria-hidden className="size-3" />
-      Settle
+      Terminer
     </>
   ),
   unsettle: (
     <>
       <Undo2Icon aria-hidden className="size-3" />
-      Un-settle
+      Réactiver
     </>
   ),
   wake: (
     <>
       <AlarmClockOffIcon aria-hidden className="size-3" />
-      Wake
+      Réveiller
     </>
   ),
 };
@@ -1556,7 +1561,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
         render={
           <span
             role="img"
-            aria-label="Unsent draft"
+            aria-label="Brouillon non envoyé"
             data-testid={`sidebar-draft-indicator-${thread.id}`}
             className="inline-flex shrink-0 items-center"
           />
@@ -1564,7 +1569,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
       >
         <SquarePenIcon aria-hidden className={draftPenClassName} />
       </TooltipTrigger>
-      <TooltipPopup side="top">Unsent draft</TooltipPopup>
+      <TooltipPopup side="top">Brouillon non envoyé</TooltipPopup>
     </Tooltip>
   ) : null;
   const showPin =
@@ -1576,7 +1581,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
           render={
             <button
               type="button"
-              aria-label="Unpin thread"
+              aria-label="Ne plus épingler"
               onClick={handleUnpinClick}
               className="inline-flex cursor-pointer items-center rounded-sm text-muted-foreground/65 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             />
@@ -1584,11 +1589,11 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
         >
           <PinIcon aria-hidden className="size-3 shrink-0" />
         </TooltipTrigger>
-        <TooltipPopup>Unpin thread</TooltipPopup>
+        <TooltipPopup>Ne plus épingler</TooltipPopup>
       </Tooltip>
     ) : (
       <PinIcon
-        aria-label="Pinned"
+        aria-label="Épinglé"
         role="img"
         className="size-3 shrink-0 text-muted-foreground/65"
       />
@@ -1675,7 +1680,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                         render={
                           <button
                             type="button"
-                            aria-label="Dismiss Woke notification"
+                            aria-label="Masquer la notification"
                             onClick={handleAcknowledgeWokeClick}
                             className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-xs font-medium text-warning-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                           >
@@ -1684,7 +1689,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                           </button>
                         }
                       />
-                      <TooltipPopup side="top">Dismiss Woke notification</TooltipPopup>
+                      <TooltipPopup side="top">Masquer la notification</TooltipPopup>
                     </Tooltip>
                   ) : (
                     <span className="text-xs">
@@ -1714,7 +1719,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                       render={
                         <button
                           type="button"
-                          aria-label="Un-settle thread"
+                          aria-label="Réactiver le thread"
                           onClick={handleUnsettleClick}
                           className={cn(
                             "pointer-events-none absolute inset-y-0 right-0 -mr-1 inline-flex cursor-pointer items-center gap-1 rounded-md bg-transparent px-1.5 text-xs text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover/sidebar-row:pointer-events-auto group-hover/sidebar-row:opacity-100",
@@ -1725,12 +1730,12 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                     >
                       <Undo2Icon className="mb-px size-3.5" />
                     </TooltipTrigger>
-                    <TooltipPopup side="top">Un-settle thread</TooltipPopup>
+                    <TooltipPopup side="top">Réactiver le thread</TooltipPopup>
                   </Tooltip>
                 ) : (
                   <button
                     type="button"
-                    aria-label="Settle thread"
+                    aria-label="Marquer comme terminé"
                     onClick={handleSettleClick}
                     className={cn(
                       "pointer-events-none absolute inset-y-0 right-0 inline-flex cursor-pointer items-center gap-1 rounded-md bg-transparent px-2 text-xs text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover/sidebar-row:pointer-events-auto group-hover/sidebar-row:opacity-100",
@@ -1829,7 +1834,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                             render={
                               <button
                                 type="button"
-                                aria-label="Dismiss Woke notification"
+                                aria-label="Masquer la notification"
                                 onClick={handleAcknowledgeWokeClick}
                                 className={cn(
                                   "inline-flex cursor-pointer items-center gap-1 rounded-sm font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring",
@@ -1841,7 +1846,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                               </button>
                             }
                           />
-                          <TooltipPopup side="top">Dismiss Woke notification</TooltipPopup>
+                          <TooltipPopup side="top">Masquer la notification</TooltipPopup>
                         </Tooltip>
                       ) : (
                         <span
@@ -1896,7 +1901,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                             render={
                               <button
                                 type="button"
-                                aria-label="Discard draft"
+                                aria-label="Supprimer le brouillon"
                                 onClick={handleDiscardDraftClick}
                                 className="inline-flex cursor-pointer items-center rounded-md bg-transparent px-1.5 text-xs text-muted-foreground hover:text-foreground"
                               />
@@ -1904,7 +1909,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                           >
                             <XIcon className="size-3.5" />
                           </TooltipTrigger>
-                          <TooltipPopup side="top">Discard draft</TooltipPopup>
+                          <TooltipPopup side="top">Supprimer le brouillon</TooltipPopup>
                         </Tooltip>
                       ) : null}
                       {showSnoozeButton ? (
@@ -1921,16 +1926,16 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                             render={
                               <button
                                 type="button"
-                                aria-label="Settle thread"
+                                aria-label="Marquer comme terminé"
                                 onClick={handleSettleClick}
                                 className="-mr-1 inline-flex cursor-pointer items-center gap-1 rounded-md bg-transparent px-1.5 text-xs text-muted-foreground hover:text-foreground"
                               />
                             }
                           >
                             <CheckIcon className="size-3.5" />
-                            Settle
+                            Terminer
                           </TooltipTrigger>
-                          <TooltipPopup>Settle thread</TooltipPopup>
+                          <TooltipPopup>Marquer comme terminé</TooltipPopup>
                         </Tooltip>
                       ) : null}
                     </span>
@@ -2257,6 +2262,7 @@ export default function Sidebar() {
     },
   });
   const newThreadContext = useHandleNewThread();
+  const createProject = useAtomCommand(projectEnvironment.create, { reportFailure: false });
   const openAddProjectCommandPalette = useCallback(
     () => openCommandPalette({ open: "add-project" }),
     [],
@@ -4425,6 +4431,59 @@ export default function Sidebar() {
     [isMobile, newThreadContext, projectGroups.length, setOpenMobile],
   );
 
+  // Quick chat: creates (once) a project rooted at the home directory, so a
+  // thread can work on the whole computer without picking a repo first.
+  const handleQuickChat = useCallback(() => {
+    const environmentId = primaryEnvironmentId ?? environments[0]?.environmentId ?? null;
+    if (!environmentId) return;
+    if (isMobile) setOpenMobile(false);
+
+    const existing = projects.find(
+      (project) =>
+        project.environmentId === environmentId && project.title === QUICK_CHAT_PROJECT_TITLE,
+    );
+    if (existing) {
+      void newThreadContext.handleNewThread(scopeProjectRef(existing.environmentId, existing.id));
+      return;
+    }
+
+    void (async () => {
+      const projectId = newProjectId();
+      const createResult = await createProject({
+        environmentId,
+        input: {
+          projectId,
+          title: QUICK_CHAT_PROJECT_TITLE,
+          workspaceRoot: "~",
+          createWorkspaceRootIfMissing: false,
+          defaultModelSelection: null,
+        },
+      });
+      if (createResult._tag === "Failure") {
+        if (!isAtomCommandInterrupted(createResult)) {
+          const error = squashAtomCommandFailure(createResult);
+          toastManager.add(
+            stackedThreadToast({
+              type: "error",
+              title: "Discussion rapide indisponible",
+              description: error instanceof Error ? error.message : "Une erreur est survenue.",
+            }),
+          );
+        }
+        return;
+      }
+      void newThreadContext.handleNewThread(scopeProjectRef(environmentId, projectId));
+    })();
+  }, [
+    createProject,
+    environments,
+    isMobile,
+    newThreadContext,
+    primaryEnvironmentId,
+    projects,
+    setOpenMobile,
+  ]);
+
   // The button mirrors chat.new: in multi-project setups both route through
   // the command palette's "New thread in..." picker, and in single-project
   // setups both create immediately. In multi-project setups the label is only
@@ -4449,6 +4508,7 @@ export default function Sidebar() {
             <SidebarThreadHeader
               searchFieldRef={headerSearchRef}
               hasProjects={projectGroups.length > 0}
+              onQuickChat={handleQuickChat}
               projectScope={
                 <Combobox
                   items={projectScopeItems}
@@ -4855,7 +4915,7 @@ export default function Sidebar() {
                               <SidebarDragBoundary
                                 key="pinned-header"
                                 marker="pinned-header"
-                                label="Pinned"
+                                label="Épinglés"
                                 visible={from !== null}
                                 isDropTarget={dragTargetSection === "pinned"}
                               />,
@@ -4866,7 +4926,7 @@ export default function Sidebar() {
                               <SidebarDragBoundary
                                 key="pinned-divider"
                                 marker="pinned-divider"
-                                label="Active"
+                                label="Actifs"
                                 visible={from !== null}
                                 isDropTarget={dragTargetSection === "active"}
                               />,
@@ -4877,7 +4937,7 @@ export default function Sidebar() {
                               <SidebarSectionPlaceholder
                                 key="active-placeholder"
                                 marker="active-placeholder"
-                                label="Active"
+                                label="Actifs"
                                 showHint={
                                   from !== null &&
                                   (activeThreads.length === 0 ||
@@ -4898,8 +4958,8 @@ export default function Sidebar() {
                                 className="mt-auto"
                                 label={
                                   snoozedShelfExpanded
-                                    ? "Snoozed"
-                                    : `Snoozed (${snoozedThreads.length})`
+                                    ? "En pause"
+                                    : `En pause (${snoozedThreads.length})`
                                 }
                                 toggle={{
                                   expanded: snoozedShelfExpanded,
@@ -4916,8 +4976,8 @@ export default function Sidebar() {
                                 className={cn(snoozedThreads.length === 0 && "mt-auto")}
                                 label={
                                   settledShelfExpanded
-                                    ? "Settled"
-                                    : `Settled (${settledThreads.length})`
+                                    ? "Terminés"
+                                    : `Terminés (${settledThreads.length})`
                                 }
                                 dragging={from !== null}
                                 isDropTarget={dragTargetSection === "settled"}
@@ -4933,7 +4993,7 @@ export default function Sidebar() {
                               <SidebarSectionPlaceholder
                                 key="settled-placeholder"
                                 marker="settled-placeholder"
-                                label="Settled"
+                                label="Terminés"
                                 showHint={
                                   from !== null &&
                                   (renderedSettledThreads.length === 0 ||

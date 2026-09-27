@@ -10,7 +10,7 @@
  * of the sidebar's scope logic. `searchFieldRef` lands on the search field so
  * the picker's popup can anchor to that width rather than to its 28px trigger.
  */
-import { FolderPlusIcon, SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
+import { FolderPlusIcon, MessageCircleIcon, SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
 import {
   type ComponentProps,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -32,6 +32,8 @@ export interface SidebarThreadHeaderProps {
   /** The project scope combobox, rendered as the first icon of the group. */
   projectScope: ReactNode;
   onNewProject: () => void;
+  /** Opens a quick chat on the whole computer (home-directory workspace). */
+  onQuickChat: () => void;
   /** Receives the click so Shift+click can skip the project picker. */
   onNewThread: (event: ReactMouseEvent) => void;
   newThreadDisabled: boolean;
@@ -54,6 +56,7 @@ export function SidebarThreadHeader({
   hasProjects,
   projectScope,
   onNewProject,
+  onQuickChat,
   onNewThread,
   newThreadDisabled,
   newThreadShortcutLabel,
@@ -74,8 +77,8 @@ export function SidebarThreadHeader({
   // screen reader on nothing.
   const activeResultExists = resultsVisible && activeSearchResultIndex < searchResultCount;
   const newThreadLabel = newThreadShortcutLabel
-    ? `New thread (${newThreadShortcutLabel})`
-    : "New thread";
+    ? `Nouveau thread (${newThreadShortcutLabel})`
+    : "Nouveau thread";
 
   return (
     <div className="flex items-center gap-1">
@@ -91,8 +94,8 @@ export function SidebarThreadHeader({
           value={searchQuery}
           onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
           onKeyDown={onSearchKeyDown}
-          placeholder="Search"
-          aria-label="Search threads"
+          placeholder="Rechercher"
+          aria-label="Rechercher un thread"
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={resultsVisible}
@@ -110,7 +113,7 @@ export function SidebarThreadHeader({
             size="icon-micro"
             variant="ghost-muted"
             className="shrink-0"
-            aria-label="Clear thread search"
+            aria-label="Effacer la recherche"
             onClick={() => {
               onClearSearch();
               searchInputRef.current?.focus();
@@ -124,22 +127,25 @@ export function SidebarThreadHeader({
           hover states, and a background well reads far louder on themed
           palettes than on the base light and dark ones. */}
       <div className="flex shrink-0 items-center">
+        <SidebarHeaderIconButton label="Discussion rapide" onClick={onQuickChat}>
+          <MessageCircleIcon />
+        </SidebarHeaderIconButton>
         {hasProjects ? (
           <>
             {projectScope}
-            <SidebarHeaderIconButton label="New project" onClick={onNewProject}>
+            <SidebarHeaderIconButton label="Nouveau projet" onClick={onNewProject}>
               <FolderPlusIcon />
             </SidebarHeaderIconButton>
           </>
         ) : null}
         <SidebarHeaderIconButton
-          label="New thread"
+          label="Nouveau thread"
           tooltip={
             showNewThreadInProjectHint ? (
               <span className="flex flex-col gap-0.5">
                 <span>{newThreadLabel}</span>
                 <span className="text-muted-foreground">
-                  New thread in current project: Shift+click
+                  Nouveau thread dans le projet actuel : Maj+clic
                   {newThreadInProjectShortcutLabel ? ` (${newThreadInProjectShortcutLabel})` : ""}
                 </span>
               </span>

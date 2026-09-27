@@ -100,6 +100,15 @@ export function detectComposerTrigger(
   const tokenStart = tokenIdx + 1;
 
   const token = text.slice(tokenStart, cursor);
+  const slashMatch = /^\/(\S*)$/.exec(token);
+  if (slashMatch) {
+    return {
+      kind: "slash-command",
+      query: slashMatch[1] ?? "",
+      rangeStart: tokenStart,
+      rangeEnd: cursor,
+    };
+  }
   const pullRequestMatch = /^#([\p{L}\p{N}][\p{L}\p{N}_-]*)?$/u.exec(token);
   if (pullRequestMatch)
     return {
